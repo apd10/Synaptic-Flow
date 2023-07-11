@@ -26,6 +26,8 @@ def run(args):
                                                      num_classes, 
                                                      args.dense_classifier, 
                                                      args.pretrained).to(device)
+    print(model)
+    print(flush=True)
     loss = nn.CrossEntropyLoss()
     opt_class, opt_kwargs = load.optimizer(args.optimizer)
     optimizer = opt_class(generator.parameters(model), lr=args.lr, weight_decay=args.weight_decay, **opt_kwargs)
@@ -34,7 +36,7 @@ def run(args):
 
     ## Pre-Train ##
     print('Pre-Train for {} epochs.'.format(args.pre_epochs))
-    pre_result = train_eval_loop(model, loss, optimizer, scheduler, train_loader, 
+    pre_model, pre_result = train_eval_loop(model, loss, optimizer, scheduler, train_loader, 
                                  test_loader, device, args.pre_epochs, args.verbose)
 
     ## Prune ##
@@ -47,7 +49,7 @@ def run(args):
     
     ## Post-Train ##
     print('Post-Training for {} epochs.'.format(args.post_epochs))
-    post_result = train_eval_loop(model, loss, optimizer, scheduler, train_loader, 
+    best_model, post_result = train_eval_loop(model, loss, optimizer, scheduler, train_loader, 
                                   test_loader, device, args.post_epochs, args.verbose) 
 
     ## Display Results ##
@@ -73,6 +75,7 @@ def run(args):
         post_result.to_pickle("{}/post-train.pkl".format(args.result_dir))
         prune_result.to_pickle("{}/compression.pkl".format(args.result_dir))
         torch.save(model.state_dict(),"{}/model.pt".format(args.result_dir))
+        torch.save(best_model,"{}/best_model.pt".format(args.result_dir))
         torch.save(optimizer.state_dict(),"{}/optimizer.pt".format(args.result_dir))
         torch.save(scheduler.state_dict(),"{}/scheduler.pt".format(args.result_dir))
 

@@ -11,6 +11,10 @@ def prune_loop(model, loss, pruner, dataloader, device, sparsity, schedule, scop
     if not train_mode:
         model.eval()
 
+    if sparsity >= 1.0:
+        print("no pruning as sparsity is set to 1.0 (0.0 factor)")
+        return
+
     # Prune model
     for epoch in tqdm(range(epochs)):
         pruner.score(model, loss, dataloader, device)

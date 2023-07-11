@@ -38,7 +38,7 @@ def get_transform(size, padding, mean, std, preprocess):
     transform.append(transforms.Normalize(mean, std))
     return transforms.Compose(transform)
 
-def dataloader(dataset, batch_size, train, workers, length=None):
+def dataloader(dataset, batch_size, train, workers, length=None, splits=None):
     # Dataset
     if dataset == 'mnist':
         mean, std = (0.1307,), (0.3081,)
@@ -97,6 +97,7 @@ def model(model_architecture, model_class):
     }
     lottery_models = {
         'vgg11' : lottery_vgg.vgg11,
+        'pt_vgg11' : lottery_vgg.pt_vgg11,
         'vgg11-bn' : lottery_vgg.vgg11_bn,
         'vgg13' : lottery_vgg.vgg13,
         'vgg13-bn' : lottery_vgg.vgg13_bn,
@@ -105,6 +106,7 @@ def model(model_architecture, model_class):
         'vgg19' : lottery_vgg.vgg19,
         'vgg19-bn' : lottery_vgg.vgg19_bn,
         'resnet20': lottery_resnet.resnet20,
+        'pt_resnet20': lottery_resnet.pt_resnet20,
         'resnet32': lottery_resnet.resnet32,
         'resnet44': lottery_resnet.resnet44,
         'resnet56': lottery_resnet.resnet56,

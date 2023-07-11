@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 from Experiments import singleshot
+from Experiments import singleshot_roast
 from Experiments import multishot
 from Experiments.theory import unit_conservation
 from Experiments.theory import layer_conservation
@@ -17,8 +18,9 @@ if __name__ == '__main__':
                         choices=['mnist','cifar10','cifar100','tiny-imagenet','imagenet'],
                         help='dataset (default: mnist)')
     training_args.add_argument('--model', type=str, default='fc', choices=['fc','conv',
+                        'pt_vgg11',
                         'vgg11','vgg11-bn','vgg13','vgg13-bn','vgg16','vgg16-bn','vgg19','vgg19-bn',
-                        'resnet18','resnet20','resnet32','resnet34','resnet44','resnet50',
+                        'resnet18','pt_resnet20', 'resnet20','resnet32','resnet34','resnet44','resnet50',
                         'resnet56','resnet101','resnet110','resnet110','resnet152','resnet1202',
                         'wide-resnet18','wide-resnet20','wide-resnet32','wide-resnet34','wide-resnet44','wide-resnet50',
                         'wide-resnet56','wide-resnet101','wide-resnet110','wide-resnet110','wide-resnet152','wide-resnet1202'],
@@ -88,7 +90,7 @@ if __name__ == '__main__':
                         help='list of number of prune-train cycles (levels) for multishot (default: [])')
     ## Experiment Hyperparameters ##
     parser.add_argument('--experiment', type=str, default='singleshot', 
-                        choices=['singleshot','multishot','unit-conservation',
+                        choices=['singleshot', 'roast', 'multishot','unit-conservation',
                         'layer-conservation','imp-conservation','schedule-conservation'],
                         help='experiment name (default: example)')
     parser.add_argument('--expid', type=str, default='',
@@ -105,6 +107,14 @@ if __name__ == '__main__':
                         help='random seed (default: 1)')
     parser.add_argument('--verbose', action='store_true',
                         help='print statistics during training and testing')
+
+    parser.add_argument('--use-global-roast', action='store_true',
+                        help='use global roast')
+    parser.add_argument('--use-local-roast', action='store_true',
+                        help='use local roast')
+    parser.add_argument('--module-limit-size', action='store', default=-1, type=int,
+                        help='roast min size')
+
     args = parser.parse_args()
 
 
@@ -133,6 +143,8 @@ if __name__ == '__main__':
     ## Run Experiment ##
     if args.experiment == 'singleshot':
         singleshot.run(args)
+    if args.experiment == 'roast':
+        singleshot_roast.run(args)
     if args.experiment == 'multishot':
         multishot.run(args)
     if args.experiment == 'unit-conservation':

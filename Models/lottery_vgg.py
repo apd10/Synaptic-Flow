@@ -9,6 +9,27 @@ import torch.nn as nn
 import torch.nn.functional as F
 from Layers import layers
 
+class ConvModulePT(nn.Module):
+    """A single convolutional module in a VGG network."""
+
+    def __init__(self, in_filters, out_filters):
+        super(ConvModulePT, self).__init__()
+        self.conv = nn.Conv2d(in_filters, out_filters, kernel_size=3, padding=1)
+
+    def forward(self, x):
+        return F.relu(self.conv(x))
+
+class ConvBNModulePT(nn.Module):
+    """A single convolutional module in a VGG network."""
+
+    def __init__(self, in_filters, out_filters):
+        super(ConvBNModulePT, self).__init__()
+        self.conv = nn.Conv2d(in_filters, out_filters, kernel_size=3, padding=1)
+        self.bn = nn.BatchNorm2d(out_filters)
+
+    def forward(self, x):
+        return F.relu(self.bn(self.conv(x)))
+
 class ConvModule(nn.Module):
     """A single convolutional module in a VGG network."""
 
@@ -29,6 +50,46 @@ class ConvBNModule(nn.Module):
 
     def forward(self, x):
         return F.relu(self.bn(self.conv(x)))
+
+class VGG_PT(nn.Module):
+    """A VGG-style neural network designed for CIFAR-10."""
+
+    def __init__(self, plan, conv, num_classes=10, dense_classifier=False):
+        super(VGG_PT, self).__init__()
+        layer_list = []
+        filters = 3
+
+        for spec in plan:
+            if spec == 'M':
+                layer_list.append(nn.MaxPool2d(kernel_size=2, stride=2))
+            else:
+                layer_list.append(conv(filters, spec))
+                filters = spec
+
+        self.layers = nn.Sequential(*layer_list)        
+
+        self.fc = nn.Linear(512, num_classes)
+        if dense_classifier:
+            self.fc = nn.Linear(512, num_classes)
+
+        self._initialize_weights()
+
+    def forward(self, x):
+        x = self.layers(x)
+        x = nn.AvgPool2d(2)(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        return x
+
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, (nn.Linear, nn.Conv2d)):
+                nn.init.kaiming_normal_(m.weight)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
 
 class VGG(nn.Module):
     """A VGG-style neural network designed for CIFAR-10."""
@@ -83,6 +144,16 @@ def _plan(num):
         raise ValueError('Unknown VGG model: {}'.format(num))
     return plan
 
+def _pt_vgg(arch, plan, conv, num_classes, dense_classifier, pretrained):
+    model = VGG_PT(plan, conv, num_classes, dense_classifier)
+    if pretrained:
+        pretrained_path = 'Models/pretrained/{}-lottery.pt'.format(arch)
+        pretrained_dict = torch.load(pretrained_path)
+        model_dict = model.state_dict()
+        model_dict.update(pretrained_dict)
+        model.load_state_dict(model_dict)
+    return model
+
 def _vgg(arch, plan, conv, num_classes, dense_classifier, pretrained):
     model = VGG(plan, conv, num_classes, dense_classifier)
     if pretrained:
@@ -96,6 +167,10 @@ def _vgg(arch, plan, conv, num_classes, dense_classifier, pretrained):
 def vgg11(input_shape, num_classes, dense_classifier=False, pretrained=False):
     plan = _plan(11)
     return _vgg('vgg11_bn', plan, ConvModule, num_classes, dense_classifier, pretrained)
+
+def pt_vgg11(input_shape, num_classes, dense_classifier=False, pretrained=False):
+    plan = _plan(11)
+    return _pt_vgg('vgg11_bn', plan, ConvModulePT, num_classes, dense_classifier, pretrained)
 
 def vgg11_bn(input_shape, num_classes, dense_classifier=False, pretrained=False):
     plan = _plan(11)
