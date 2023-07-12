@@ -51,8 +51,8 @@ def eval(model, loss, dataloader, device, verbose, tag=""):
 
 def train_eval_loop(model, loss, optimizer, scheduler, train_loader, test_loader, device, epochs, verbose):
     # split train dataloader into validation
-    #train_loader, validation_loader = split_dataloader(train_loader, 0.95, 101)
-    validation_loader = train_loader
+    train_loader, validation_loader = split_dataloader(train_loader, 0.95, 101)
+    #validation_loader = train_loader
     print("TRAIN", len(train_loader.dataset))
     print("VAL", len(validation_loader.dataset))
 
