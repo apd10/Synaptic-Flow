@@ -8,6 +8,18 @@ from Utils import metrics
 from train import *
 from prune import *
 
+
+def analyse(model):
+    for name, module in model.named_modules():
+        for pname, param in module.named_parameters(recurse=False):
+            if 'weight_mask' in dir(module):
+                norm = torch.norm(param * module.weight_mask).item()
+            else:
+                norm = torch.norm(param).item()
+            print(name, pname, param.shape, norm)
+
+  
+
 def run(args):
     ## Random Seed and Device ##
     torch.manual_seed(args.seed)
@@ -28,6 +40,17 @@ def run(args):
                                                      args.pretrained).to(device)
     print(model)
     print(flush=True)
+    if args.analyse_model:
+        print("At initialization")
+        analyse(model)
+
+
+    if args.analyse_model is not None:
+        print("After training")
+        model.load_state_dict(torch.load(args.analyse_model))
+        analyse(model)
+        return
+
     loss = nn.CrossEntropyLoss()
     opt_class, opt_kwargs = load.optimizer(args.optimizer)
     optimizer = opt_class(generator.parameters(model), lr=args.lr, weight_decay=args.weight_decay, **opt_kwargs)

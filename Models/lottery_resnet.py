@@ -29,7 +29,7 @@ class PTBlock(nn.Module):
                 nn.BatchNorm2d(f_out)
             )
         else:
-            self.shortcut = Layers.Identity()
+            self.shortcut = layers.Identity2d(f_in)
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
@@ -88,7 +88,7 @@ class PTResNet(nn.Module):
 
         self.fc = nn.Linear(plan[-1][0], num_classes)
         if dense_classifier:
-            self.fc = nn.Linear(plan[-1][0], num_classes)
+            self.fc.do_not_roast = True
 
         self._initialize_weights()
 

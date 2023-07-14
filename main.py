@@ -115,6 +115,9 @@ if __name__ == '__main__':
     parser.add_argument('--module-limit-size', action='store', default=-1, type=int,
                         help='roast min size')
 
+    parser.add_argument('--analyse-model', action='store', default=None, type=str,
+                        help='post model analysis')
+
     args = parser.parse_args()
 
 
