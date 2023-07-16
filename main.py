@@ -112,8 +112,12 @@ if __name__ == '__main__':
                         help='use global roast')
     parser.add_argument('--use-local-roast', action='store_true',
                         help='use local roast')
+    parser.add_argument('--use-roast-grad-scaler', action='store_true',
+                        help='scale roast gradeints before updating')
     parser.add_argument('--module-limit-size', action='store', default=-1, type=int,
                         help='roast min size')
+    parser.add_argument('--roast-init-std', action='store', default=0.04, type=float,
+                        help='roast array init std')
 
     parser.add_argument('--analyse-model', action='store', default=None, type=str,
                         help='post model analysis')

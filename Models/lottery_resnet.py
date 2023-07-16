@@ -29,7 +29,8 @@ class PTBlock(nn.Module):
                 nn.BatchNorm2d(f_out)
             )
         else:
-            self.shortcut = layers.Identity2d(f_in)
+            #self.shortcut = layers.Identity2d(f_in)
+            self.shortcut = nn.Sequential()
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
@@ -56,7 +57,7 @@ class Block(nn.Module):
                 layers.BatchNorm2d(f_out)
             )
         else:
-            self.shortcut = layers.Identity2d(f_in)
+            self.shortcut = nn.Sequential()
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
@@ -108,7 +109,8 @@ class PTResNet(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
+                #nn.init.constant_(m.weight, 1)
+                nn.init.uniform_(m.weight)
                 nn.init.constant_(m.bias, 0)
 
 class ResNet(nn.Module):
@@ -154,7 +156,8 @@ class ResNet(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
             elif isinstance(m, layers.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
+                #nn.init.constant_(m.weight, 1)
+                nn.init.uniform_(m.weight)
                 nn.init.constant_(m.bias, 0)
 
 

@@ -48,8 +48,8 @@ def run(args):
                                                      args.dense_classifier, 
                                                        args.pretrained)
 
-    print(model)
     if args.analyse_model:
+        print(model)
         print("At initialization")
         analyse(model)
     possible_params = get_parameters(model)
@@ -59,9 +59,10 @@ def run(args):
     roaster = None
     if args.use_global_roast:
         print("GLOBAL ROAST")
-        roaster = FakeRoastUtil_v2.ModelRoaster(model, True, sparsity, verbose=FakeRoastUtil_v2.NONE, 
-                                                module_limit_size=args.module_limit_size)
+        roaster = FakeRoastUtil_v2.ModelRoasterGradScaler(model, True, sparsity, verbose=FakeRoastUtil_v2.NONE, 
+                                                module_limit_size=args.module_limit_size, init_std=args.roast_init_std)
         model = roaster.process()
+        
     elif args.use_local_roast:
         print("LOCAL ROAST")
         roaster = FakeRoastUtil_v2.ModelRoaster(model, False, sparsity, verbose=FakeRoastUtil_v2.NONE,
@@ -93,8 +94,7 @@ def run(args):
                            "roasted" : roasted_parameters,
                            "final" : total_params
                          }, index=[0])
-    print(compression_result)
-    print(flush=True)
+    print(compression_result, flush=True)
 
     model = model.to(device)
     loss = nn.CrossEntropyLoss()
@@ -105,7 +105,7 @@ def run(args):
     ## Post-Train ##
     print('Post-Training for {} epochs.'.format(args.post_epochs))
     best_model_dict, post_result = train_eval_loop(model, loss, optimizer, scheduler, train_loader, 
-                                  test_loader, device, args.post_epochs, args.verbose) 
+                                  test_loader, device, args.post_epochs, args.verbose, use_roast_scaler=args.use_roast_grad_scaler) 
 
     ## Display Results ##
     frames = [post_result.head(1), post_result.tail(1)]
