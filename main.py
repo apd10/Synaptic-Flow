@@ -114,6 +114,8 @@ if __name__ == '__main__':
                         help='use local roast')
     parser.add_argument('--use-roast-grad-scaler', action='store_true',
                         help='scale roast gradeints before updating')
+    parser.add_argument('--roast-scaler-mode', action='store', default="v1",
+                        help='modes see FakeRoastUtil_v2 for defintions')
     parser.add_argument('--module-limit-size', action='store', default=-1, type=int,
                         help='roast min size')
     parser.add_argument('--roast-init-std', action='store', default=0.04, type=float,

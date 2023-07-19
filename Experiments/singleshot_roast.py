@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from tabulate import tabulate
 import torch
 import torch.nn as nn
 from Utils import load
@@ -20,6 +21,9 @@ def get_parameters(model):
     return s
 
 def analyse(model):
+    names = []
+    pnames = []
+    norms = []
     for name, module in model.named_modules():
         for pname, param in module.named_parameters(recurse=False):
             if not param.requires_grad:
@@ -28,7 +32,12 @@ def analyse(model):
                 norm = torch.norm(module.wt_comp_to_orig(param)).item()
             else:
                 norm = torch.norm(param).item()
-            print(name, pname, param.shape, norm)
+            #print(name, pname, param.shape, norm)
+            names.append(name)
+            pnames.append(pname)
+            norms.append(norm)
+
+    return pd.DataFrame({"name" : names, "pname" : pnames, "norm": norms})
 
 def run(args):
     ## Random Seed and Device ##
@@ -48,10 +57,7 @@ def run(args):
                                                      args.dense_classifier, 
                                                        args.pretrained)
 
-    if args.analyse_model:
-        print(model)
-        print("At initialization")
-        analyse(model)
+
     possible_params = get_parameters(model)
 
     sparsity = 10**(-float(args.compression))
@@ -60,7 +66,8 @@ def run(args):
     if args.use_global_roast:
         print("GLOBAL ROAST")
         roaster = FakeRoastUtil_v2.ModelRoasterGradScaler(model, True, sparsity, verbose=FakeRoastUtil_v2.NONE, 
-                                                module_limit_size=args.module_limit_size, init_std=args.roast_init_std)
+                                                module_limit_size=args.module_limit_size, init_std=args.roast_init_std,
+                                                scaler_mode=args.roast_scaler_mode)
         model = roaster.process()
         
     elif args.use_local_roast:
@@ -77,10 +84,14 @@ def run(args):
 
     print(model, flush=True)
 
-    if args.analyse_model is not None:
-        print("After Training")
+    if args.analyse_model:
+        bef_df = analyse(model)
         model.load_state_dict(torch.load(args.analyse_model))
-        analyse(model)
+        aft_df = analyse(model)
+        norm_df = bef_df.merge(aft_df, on=["name", "pname"], suffixes=('_bef', '_aft'))
+        print(tabulate(norm_df, headers='keys', tablefmt='psql'))
+        norm_df = norm_df[norm_df.pname != "roast_array"]
+        print("full model norm", np.linalg.norm(norm_df.norm_bef), np.linalg.norm(norm_df.norm_aft))
         return
 
     total_params = get_parameters(model)

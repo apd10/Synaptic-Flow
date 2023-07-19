@@ -4,11 +4,28 @@ import numpy as np
 from tqdm import tqdm
 from Utils.manipulators import *
 from FakeRoast.FakeRoastUtil_v2 import RoastGradScaler
+from FakeRoast.FakeRoast import FakeRoast
+
+def analyse_grads(model):
+    print(" ================ analysing grad norms ===============")
+    for name, module in model.named_modules():
+        for pname, param in module.named_parameters(recurse=False):
+            if not param.requires_grad:
+                continue
+            if isinstance(module, FakeRoast):
+                grad = module.grad_comp_to_orig(param.grad)
+                norm = torch.norm(grad).item()
+            else:
+                grad = param.grad
+                norm = torch.norm(grad).item()
+            print(name, pname, grad.shape, norm)
 
 def train(model, loss, optimizer, dataloader, device, epoch, verbose, log_interval=10, use_roast_scaler=False):
     model.train()
     total = 0
     for batch_idx, (data, target) in enumerate(dataloader):
+        if verbose:
+            print(batch_idx, "train loop")
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
         output = model(data)
@@ -21,8 +38,13 @@ def train(model, loss, optimizer, dataloader, device, epoch, verbose, log_interv
                 if p.requires_grad:
                     grads.append(torch.norm(p.grad).item() if (p.grad is not None) else 0)
             print("grad: ", grads, flush=True)
+
+        if verbose:
+            analyse_grads(model)
         if use_roast_scaler:
             RoastGradScaler().scale_step(model)
+        if verbose:
+            analyse_grads(model)
         optimizer.step()
         if verbose & (batch_idx % log_interval == 0):
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(

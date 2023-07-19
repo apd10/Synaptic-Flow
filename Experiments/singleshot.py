@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from tabulate import tabulate
 import torch
 import torch.nn as nn
 from Utils import load
@@ -10,13 +11,22 @@ from prune import *
 
 
 def analyse(model):
+    names = []
+    pnames = []
+    norms = []
     for name, module in model.named_modules():
         for pname, param in module.named_parameters(recurse=False):
-            if 'weight_mask' in dir(module):
+            print(name, pname)
+            if 'weight_mask' in dir(module) and pname == "weight":
                 norm = torch.norm(param * module.weight_mask).item()
             else:
                 norm = torch.norm(param).item()
             print(name, pname, param.shape, norm)
+            names.append(name)
+            pnames.append(pname)
+            norms.append(norm)
+
+    return pd.DataFrame({"name" : names, "pname" : pnames, "norm": norms})
 
   
 
@@ -41,14 +51,12 @@ def run(args):
     print(model)
     print(flush=True)
     if args.analyse_model:
-        print("At initialization")
-        analyse(model)
-
-
-    if args.analyse_model is not None:
-        print("After training")
+        bef_df = analyse(model)
         model.load_state_dict(torch.load(args.analyse_model))
-        analyse(model)
+        aft_df = analyse(model)
+        norm_df = bef_df.merge(aft_df, on=["name", "pname"], suffixes=('_bef', '_aft'))
+        print(tabulate(norm_df, headers='keys', tablefmt='psql'))
+        print("full model norm", np.linalg.norm(norm_df.norm_bef), np.linalg.norm(norm_df.norm_aft))
         return
 
     loss = nn.CrossEntropyLoss()
