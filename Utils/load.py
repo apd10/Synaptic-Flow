@@ -98,6 +98,7 @@ def model(model_architecture, model_class):
     lottery_models = {
         'vgg11' : lottery_vgg.vgg11,
         'pt_vgg11' : lottery_vgg.pt_vgg11,
+        'pt_vgg11_bn' : lottery_vgg.pt_vgg11_bn,
         'vgg11-bn' : lottery_vgg.vgg11_bn,
         'vgg13' : lottery_vgg.vgg13,
         'vgg13-bn' : lottery_vgg.vgg13_bn,
