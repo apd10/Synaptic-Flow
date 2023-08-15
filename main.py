@@ -120,6 +120,7 @@ if __name__ == '__main__':
                         help='roast min size')
     parser.add_argument('--roast-init-std', action='store', default=0.04, type=float,
                         help='roast array init std')
+    parser.add_argument('--roast-mapper', action='store', default='hashednet', type=str, help='mapper')
 
     parser.add_argument('--analyse-model', action='store', default=None, type=str,
                         help='post model analysis')

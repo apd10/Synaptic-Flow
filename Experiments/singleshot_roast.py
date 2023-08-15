@@ -8,7 +8,7 @@ from Utils import generator
 from Utils import metrics
 from train import *
 from FakeRoast import FakeRoastUtil_v2
-from FakeRoast.FakeRoast import FakeRoast
+from FakeRoast.FakeRoast import *
 import pdb
 
 def get_parameters(model):
@@ -25,17 +25,29 @@ def analyse(model):
     pnames = []
     norms = []
     for name, module in model.named_modules():
-        for pname, param in module.named_parameters(recurse=False):
-            if not param.requires_grad:
-                continue
-            if isinstance(module, FakeRoast):
-                norm = torch.norm(module.wt_comp_to_orig(param)).item()
-            else:
-                norm = torch.norm(param).item()
-            #print(name, pname, param.shape, norm)
-            names.append(name)
-            pnames.append(pname)
-            norms.append(norm)
+        if name.endswith('WHelper'):
+            continue
+
+        if isinstance(module, FakeRoastConv2d) or isinstance(module, FakeRoastLinear):
+            for pname, param in module.named_parameters():
+                  if not param.requires_grad:
+                    continue
+                  if pname in ['WHelper.weight']:
+                      norm = torch.norm(module.scale * module.WHelper.wt_comp_to_orig(param)).item()
+                  else:
+                      norm = torch.norm(param).item()
+                  names.append(name)
+                  pnames.append(pname)
+                  norms.append(norm)
+
+        else:
+            for pname, param in module.named_parameters(recurse=False):
+                  if not param.requires_grad:
+                      continue
+                  norm = torch.norm(param).item()
+                  names.append(name)
+                  pnames.append(pname)
+                  norms.append(norm)
 
     return pd.DataFrame({"name" : names, "pname" : pnames, "norm": norms})
 
@@ -63,17 +75,21 @@ def run(args):
     sparsity = 10**(-float(args.compression))
     # roast if needed
     roaster = None
+    if args.roast_mapper == "random":
+        mapper_args = None
+    else:
+        mapper_args = { "mapper": args.roast_mapper, "hasher" : "uhash", "block_k" : 16, "block_n" : 16, "block": 8, "seed" : 1011}
     if args.use_global_roast:
         print("GLOBAL ROAST")
         roaster = FakeRoastUtil_v2.ModelRoasterGradScaler(model, True, sparsity, verbose=FakeRoastUtil_v2.NONE, 
                                                 module_limit_size=args.module_limit_size, init_std=args.roast_init_std,
-                                                scaler_mode=args.roast_scaler_mode)
+                                                scaler_mode=args.roast_scaler_mode, mapper_args=mapper_args)
         model = roaster.process()
         
     elif args.use_local_roast:
         print("LOCAL ROAST")
         roaster = FakeRoastUtil_v2.ModelRoaster(model, False, sparsity, verbose=FakeRoastUtil_v2.NONE,
-                                                module_limit_size=args.module_limit_size)
+                                                module_limit_size=args.module_limit_size, mapper_args=mapper_args)
 
         model = roaster.process()
     roasted_parameters = 0
@@ -83,6 +99,10 @@ def run(args):
         
 
     print(model, flush=True)
+    df = analyse(model)
+    print(tabulate(df, headers='keys', tablefmt='psql'))
+    norm_df = df[df.pname != "roast_array"]
+    print("full model norm", np.linalg.norm(norm_df.norm))
 
     if args.analyse_model:
         bef_df = analyse(model)

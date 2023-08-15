@@ -70,7 +70,7 @@ class VGG_PT(nn.Module):
 
         self.fc = nn.Linear(512, num_classes)
         if dense_classifier:
-            self.fc = nn.Linear(512, num_classes)
+            self.fc.do_not_roast = True
 
         self._initialize_weights()
 
