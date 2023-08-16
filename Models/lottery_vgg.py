@@ -178,7 +178,7 @@ def vgg11_bn(input_shape, num_classes, dense_classifier=False, pretrained=False)
 
 def pt_vgg11_bn(input_shape, num_classes, dense_classifier=False, pretrained=False):
     plan = _plan(11)
-    return _vgg('vgg11_bn', plan, ConvBNModulePT, num_classes, dense_classifier, pretrained)
+    return _pt_vgg('vgg11_bn', plan, ConvBNModulePT, num_classes, dense_classifier, pretrained)
 
 def vgg13(input_shape, num_classes, dense_classifier=False, pretrained=False):
     plan = _plan(13)
