@@ -77,15 +77,7 @@ def run(args):
     prune_loop(model, loss, pruner, prune_loader, device, sparsity, 
                args.compression_schedule, args.mask_scope, args.prune_epochs, args.reinitialize, args.prune_train_mode, args.shuffle, args.invert)
 
-    
-    ## Post-Train ##
-    print('Post-Training for {} epochs.'.format(args.post_epochs))
-    best_model, post_result = train_eval_loop(model, loss, optimizer, scheduler, train_loader, 
-                                  test_loader, device, args.post_epochs, args.verbose) 
-
-    ## Display Results ##
-    frames = [pre_result.head(1), pre_result.tail(1), post_result.head(1), post_result.tail(1)]
-    train_result = pd.concat(frames, keys=['Init.', 'Pre-Prune', 'Post-Prune', 'Final'])
+    # prune result#
     prune_result = metrics.summary(model, 
                                    pruner.scores,
                                    metrics.flop(model, input_shape, device),
@@ -94,6 +86,21 @@ def run(args):
     possible_params = prune_result['size'].sum()
     total_flops = int((prune_result['sparsity'] * prune_result['flops']).sum())
     possible_flops = prune_result['flops'].sum()
+    unpruned = prune_result[~prune_result.prunable]['size'].sum()
+    pruned = prune_result[prune_result.prunable]['size'].sum()
+    print( "Total", total_params, "Unpruned:", unpruned,  "Prunable:", pruned,  "After pruning:", possible_params)
+    
+    print("Parameter Sparsity: {}/{} ({:.4f})".format(total_params, possible_params, total_params / possible_params))
+    print("FLOP Sparsity: {}/{} ({:.4f})".format(total_flops, possible_flops, total_flops / possible_flops))
+
+    ## Post-Train ##
+    print('Post-Training for {} epochs.'.format(args.post_epochs))
+    best_model, post_result = train_eval_loop(model, loss, optimizer, scheduler, train_loader, 
+                                  test_loader, device, args.post_epochs, args.verbose) 
+
+    ## Display Results ##
+    frames = [pre_result.head(1), pre_result.tail(1), post_result.head(1), post_result.tail(1)]
+    train_result = pd.concat(frames, keys=['Init.', 'Pre-Prune', 'Post-Prune', 'Final'])
     print("Train results:\n", train_result)
     print("Prune results:\n", prune_result)
     print("Parameter Sparsity: {}/{} ({:.4f})".format(total_params, possible_params, total_params / possible_params))

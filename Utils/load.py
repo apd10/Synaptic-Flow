@@ -130,6 +130,7 @@ def model(model_architecture, model_class):
         'vgg19' : tinyimagenet_vgg.vgg19,
         'vgg19-bn' : tinyimagenet_vgg.vgg19_bn,
         'resnet18' : tinyimagenet_resnet.resnet18,
+        'pt_resnet18' : tinyimagenet_resnet.pt_resnet18,
         'resnet34' : tinyimagenet_resnet.resnet34,
         'resnet50' : tinyimagenet_resnet.resnet50,
         'resnet101' : tinyimagenet_resnet.resnet101,
