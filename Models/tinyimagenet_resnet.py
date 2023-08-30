@@ -315,6 +315,32 @@ def resnet18(input_shape, num_classes, dense_classifier=False, pretrained=False)
     return _resnet('resnet18', BasicBlock, [2, 2, 2, 2], 64, num_classes, dense_classifier, pretrained)
 
 
+def pt_resnet18_2(input_shape, num_classes, dense_classifier=False, pretrained=False):
+    """ return a ResNet 18 object
+    """
+    return _pt_resnet('resnet18', BasicBlockPT, [2, 2, 2, 2], 2, num_classes, dense_classifier, pretrained)
+
+def pt_resnet18_4(input_shape, num_classes, dense_classifier=False, pretrained=False):
+    """ return a ResNet 18 object
+    """
+    return _pt_resnet('resnet18', BasicBlockPT, [2, 2, 2, 2], 4, num_classes, dense_classifier, pretrained)
+
+def pt_resnet18_8(input_shape, num_classes, dense_classifier=False, pretrained=False):
+    """ return a ResNet 18 object
+    """
+    return _pt_resnet('resnet18', BasicBlockPT, [2, 2, 2, 2], 8, num_classes, dense_classifier, pretrained)
+
+def pt_resnet18_16(input_shape, num_classes, dense_classifier=False, pretrained=False):
+    """ return a ResNet 18 object
+    """
+    return _pt_resnet('resnet18', BasicBlockPT, [2, 2, 2, 2], 16, num_classes, dense_classifier, pretrained)
+
+
+def pt_resnet18_32(input_shape, num_classes, dense_classifier=False, pretrained=False):
+    """ return a ResNet 18 object
+    """
+    return _pt_resnet('resnet18', BasicBlockPT, [2, 2, 2, 2], 32, num_classes, dense_classifier, pretrained)
+
 def pt_resnet18(input_shape, num_classes, dense_classifier=False, pretrained=False):
     """ return a ResNet 18 object
     """

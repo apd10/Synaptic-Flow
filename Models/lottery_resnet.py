@@ -208,9 +208,22 @@ def _pt_resnet(arch, plan, num_classes, dense_classifier, pretrained):
 
 
 # ResNet Models
+
 def resnet20(input_shape, num_classes, dense_classifier=False, pretrained=False):
     plan = _plan(20, 16)
     return _resnet('resnet20', plan, num_classes, dense_classifier, pretrained)
+
+def pt_resnet20_2(input_shape, num_classes, dense_classifier=False, pretrained=False):
+    plan = _plan(20, 2)
+    return _pt_resnet('resnet20', plan, num_classes, dense_classifier, pretrained)
+
+def pt_resnet20_4(input_shape, num_classes, dense_classifier=False, pretrained=False):
+    plan = _plan(20, 4)
+
+    return _pt_resnet('resnet20', plan, num_classes, dense_classifier, pretrained)
+def pt_resnet20_8(input_shape, num_classes, dense_classifier=False, pretrained=False):
+    plan = _plan(20, 8)
+    return _pt_resnet('resnet20', plan, num_classes, dense_classifier, pretrained)
 
 def pt_resnet20(input_shape, num_classes, dense_classifier=False, pretrained=False):
     plan = _plan(20, 16)

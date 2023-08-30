@@ -72,7 +72,7 @@ def dataloader(dataset, batch_size, train, workers, length=None, splits=None):
                 transforms.CenterCrop(224),
                 transforms.ToTensor(),
                 transforms.Normalize(mean, std)])
-        folder = 'Data/imagenet_raw/{}'.format('train' if train else 'val')
+        folder = '/scratch1/apd10/imagenet_raw/{}'.format('train' if train else 'val')
         dataset = datasets.ImageFolder(folder, transform=transform)
     
     # Dataloader
@@ -108,6 +108,9 @@ def model(model_architecture, model_class):
         'vgg19-bn' : lottery_vgg.vgg19_bn,
         'resnet20': lottery_resnet.resnet20,
         'pt_resnet20': lottery_resnet.pt_resnet20,
+        'pt_resnet20_8': lottery_resnet.pt_resnet20_8,
+        'pt_resnet20_4': lottery_resnet.pt_resnet20_4,
+        'pt_resnet20_2': lottery_resnet.pt_resnet20_2,
         'resnet32': lottery_resnet.resnet32,
         'resnet44': lottery_resnet.resnet44,
         'resnet56': lottery_resnet.resnet56,
@@ -131,6 +134,11 @@ def model(model_architecture, model_class):
         'vgg19-bn' : tinyimagenet_vgg.vgg19_bn,
         'resnet18' : tinyimagenet_resnet.resnet18,
         'pt_resnet18' : tinyimagenet_resnet.pt_resnet18,
+        'pt_resnet18_2' : tinyimagenet_resnet.pt_resnet18_2,
+        'pt_resnet18_4' : tinyimagenet_resnet.pt_resnet18_4,
+        'pt_resnet18_8' : tinyimagenet_resnet.pt_resnet18_8,
+        'pt_resnet18_16' : tinyimagenet_resnet.pt_resnet18_16,
+        'pt_resnet18_32' : tinyimagenet_resnet.pt_resnet18_32,
         'resnet34' : tinyimagenet_resnet.resnet34,
         'resnet50' : tinyimagenet_resnet.resnet50,
         'resnet101' : tinyimagenet_resnet.resnet101,
