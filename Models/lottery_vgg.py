@@ -91,6 +91,46 @@ class VGG_PT(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
+
+class VGG_PT_WIDTH(nn.Module):
+    """A VGG-style neural network designed for CIFAR-10."""
+
+    def __init__(self, plan, conv, num_classes=10, dense_classifier=False):
+        super(VGG_PT_WIDTH, self).__init__()
+        layer_list = []
+        filters = 3
+
+        for spec in plan:
+            if spec == 'M':
+                layer_list.append(nn.MaxPool2d(kernel_size=2, stride=2))
+            else:
+                layer_list.append(conv(filters, spec))
+                filters = spec
+
+        self.layers = nn.Sequential(*layer_list)        
+
+        self.fc = nn.Linear(plan[-1], num_classes)
+        if dense_classifier:
+            self.fc.do_not_roast = True
+
+        self._initialize_weights()
+
+    def forward(self, x):
+        x = self.layers(x)
+        x = nn.AvgPool2d(2)(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        return x
+
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, (nn.Linear, nn.Conv2d)):
+                nn.init.kaiming_normal_(m.weight)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
 class VGG(nn.Module):
     """A VGG-style neural network designed for CIFAR-10."""
 
@@ -132,7 +172,17 @@ class VGG(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
 def _plan(num):
-    if num == 11:
+    if num == 11.32:
+        plan = [32, 'M', 64, 'M', 128, 128 , 'M', 256, 256, 'M', 256, 256]
+    elif num == 11.16:
+        plan = [16, 'M', 32, 'M', 64, 64 , 'M', 128,128 , 'M', 128, 128]
+    elif num == 11.8:
+        plan = [8, 'M', 16, 'M', 32, 32 , 'M', 64, 64, 'M', 64, 64]
+    elif num == 11.4:
+        plan = [4, 'M', 8, 'M', 16, 16 , 'M', 32, 32, 'M', 32, 32]
+    elif num == 11.2:
+        plan = [2, 'M', 4, 'M', 8, 8 , 'M', 16, 16, 'M', 16, 16]
+    elif num == 11:
         plan = [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512]
     elif num == 13:
         plan = [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512]
@@ -146,6 +196,16 @@ def _plan(num):
 
 def _pt_vgg(arch, plan, conv, num_classes, dense_classifier, pretrained):
     model = VGG_PT(plan, conv, num_classes, dense_classifier)
+    if pretrained:
+        pretrained_path = 'Models/pretrained/{}-lottery.pt'.format(arch)
+        pretrained_dict = torch.load(pretrained_path)
+        model_dict = model.state_dict()
+        model_dict.update(pretrained_dict)
+        model.load_state_dict(model_dict)
+    return model
+
+def _pt_vgg_width(arch, plan, conv, num_classes, dense_classifier, pretrained):
+    model = VGG_PT_WIDTH(plan, conv, num_classes, dense_classifier)
     if pretrained:
         pretrained_path = 'Models/pretrained/{}-lottery.pt'.format(arch)
         pretrained_dict = torch.load(pretrained_path)
@@ -179,6 +239,26 @@ def vgg11_bn(input_shape, num_classes, dense_classifier=False, pretrained=False)
 def pt_vgg11_bn(input_shape, num_classes, dense_classifier=False, pretrained=False):
     plan = _plan(11)
     return _pt_vgg('vgg11_bn', plan, ConvBNModulePT, num_classes, dense_classifier, pretrained)
+
+def pt_vgg11_2_bn(input_shape, num_classes, dense_classifier=False, pretrained=False):
+    plan = _plan(11.2)
+    return _pt_vgg_width('vgg11_bn', plan, ConvBNModulePT, num_classes, dense_classifier, pretrained)
+
+def pt_vgg11_4_bn(input_shape, num_classes, dense_classifier=False, pretrained=False):
+    plan = _plan(11.4)
+    return _pt_vgg_width('vgg11_bn', plan, ConvBNModulePT, num_classes, dense_classifier, pretrained)
+
+def pt_vgg11_8_bn(input_shape, num_classes, dense_classifier=False, pretrained=False):
+    plan = _plan(11.8)
+    return _pt_vgg_width('vgg11_bn', plan, ConvBNModulePT, num_classes, dense_classifier, pretrained)
+
+def pt_vgg11_16_bn(input_shape, num_classes, dense_classifier=False, pretrained=False):
+    plan = _plan(11.16)
+    return _pt_vgg_width('vgg11_bn', plan, ConvBNModulePT, num_classes, dense_classifier, pretrained)
+
+def pt_vgg11_32_bn(input_shape, num_classes, dense_classifier=False, pretrained=False):
+    plan = _plan(11.32)
+    return _pt_vgg_width('vgg11_bn', plan, ConvBNModulePT, num_classes, dense_classifier, pretrained)
 
 def vgg13(input_shape, num_classes, dense_classifier=False, pretrained=False):
     plan = _plan(13)

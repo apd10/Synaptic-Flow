@@ -18,7 +18,7 @@ if __name__ == '__main__':
                         choices=['mnist','cifar10','cifar100','tiny-imagenet','imagenet'],
                         help='dataset (default: mnist)')
     training_args.add_argument('--model', type=str, default='fc', choices=['fc','conv',
-                        'pt_vgg11', 'pt_vgg11_bn',
+                        'pt_vgg11', 'pt_vgg11_bn', 'pt_vgg11_2_bn', 'pt_vgg11_4_bn', 'pt_vgg11_8_bn', 'pt_vgg11_16_bn', 'pt_vgg11_32_bn',
                         'vgg11','vgg11-bn','vgg13','vgg13-bn','vgg16','vgg16-bn','vgg19','vgg19-bn',
                         'pt_resnet18', 'resnet18', 'pt_resnet18_2', 'pt_resnet18_4' ,'pt_resnet18_8', 'pt_resnet18_16', 'pt_resnet18_32',
                         'pt_resnet20', 'pt_resnet20_8','pt_resnet20_4','pt_resnet20_2',
@@ -126,8 +126,21 @@ if __name__ == '__main__':
 
     parser.add_argument('--analyse-model', action='store', default=None, type=str,
                         help='post model analysis')
+    parser.add_argument('--json', action='store', default=None, type=str, help='load args from json')
+    parser.add_argument('--override', action='store', default=None, type=str, help='load args from json')
 
-    args = parser.parse_args()
+    new_args = parser.parse_args()
+
+
+    if new_args.json:
+        with open(new_args.json, 'rt') as f:
+            t_args = argparse.Namespace()
+            t_args.__dict__.update(json.load(f))
+            for att in new_args.override.split(','):
+                t_args.__dict__[att.replace('-','_')] = new_args.__dict__[att.replace('-','_')]
+            args = parser.parse_args(namespace=t_args)
+    else:
+        args = new_args
 
 
     ## Construct Result Directory ##

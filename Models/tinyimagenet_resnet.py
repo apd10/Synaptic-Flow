@@ -221,6 +221,77 @@ class ResNetPT(nn.Module):
 
         return output 
 
+class ResNetPT_Width(nn.Module):
+
+    def __init__(self, block, num_block, base_width, num_classes=200, dense_classifier=False, max_width=512):
+        super().__init__()
+
+        INIT = int(max_width / 8)
+
+        self.in_channels = INIT
+
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(3, INIT, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(INIT),
+            nn.ReLU(inplace=True))
+        #we use a different inputsize than the original paper
+        #so conv2_x's stride is 1
+        self.conv2_x = self._make_layer(block, INIT, num_block[0], 1, base_width)
+        self.conv3_x = self._make_layer(block, 2*INIT, num_block[1], 2, base_width)
+        self.conv4_x = self._make_layer(block, 4*INIT, num_block[2], 2, base_width)
+        self.conv5_x = self._make_layer(block, 8*INIT, num_block[3], 2, base_width)
+        self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear((8*INIT) * block.expansion, num_classes)
+        if dense_classifier:
+            #self.fc = nn.Linear(512 * block.expansion, num_classes)
+            self.fc.do_not_roast = True
+        self._initialize_weights()
+
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+    def _make_layer(self, block, out_channels, num_blocks, stride, base_width):
+        """make resnet layers(by layer i didnt mean this 'layer' was the 
+        same as a neuron netowork layer, ex. conv layer), one layer may 
+        contain more than one residual block 
+
+        Args:
+            block: block type, basic block or bottle neck block
+            out_channels: output depth channel number of this layer
+            num_blocks: how many blocks per layer
+            stride: the stride of the first block of this layer
+        
+        Return:
+            return a resnet layer
+        """
+
+        # we have num_block blocks per layer, the first block 
+        # could be 1 or 2, other blocks would always be 1
+        strides = [stride] + [1] * (num_blocks - 1)
+        layer_list = []
+        for stride in strides:
+            layer_list.append(block(self.in_channels, out_channels, stride, base_width))
+            self.in_channels = out_channels * block.expansion
+        
+        return nn.Sequential(*layer_list)
+
+    def forward(self, x):
+        output = self.conv1(x)
+        output = self.conv2_x(output)
+        output = self.conv3_x(output)
+        output = self.conv4_x(output)
+        output = self.conv5_x(output)
+        output = self.avg_pool(output)
+        output = output.view(output.size(0), -1)
+        output = self.fc(output)
+
+        return output 
+
 class ResNet(nn.Module):
 
     def __init__(self, block, num_block, base_width, num_classes=200, dense_classifier=False):
@@ -309,6 +380,16 @@ def _pt_resnet(arch, block, num_block, base_width, num_classes, dense_classifier
         model.load_state_dict(model_dict)
     return model
 
+def _pt_resnet_width(arch, block, num_block, base_width, num_classes, dense_classifier, pretrained, max_width):
+    model = ResNetPT_Width(block, num_block, base_width, num_classes, dense_classifier, max_width=max_width)
+    if pretrained:
+        pretrained_path = 'Models/pretrained/{}-cifar{}.pt'.format(arch, num_classes)
+        pretrained_dict = torch.load(pretrained_path)
+        model_dict = model.state_dict()
+        model_dict.update(pretrained_dict)
+        model.load_state_dict(model_dict)
+    return model
+
 def resnet18(input_shape, num_classes, dense_classifier=False, pretrained=False):
     """ return a ResNet 18 object
     """
@@ -318,28 +399,28 @@ def resnet18(input_shape, num_classes, dense_classifier=False, pretrained=False)
 def pt_resnet18_2(input_shape, num_classes, dense_classifier=False, pretrained=False):
     """ return a ResNet 18 object
     """
-    return _pt_resnet('resnet18', BasicBlockPT, [2, 2, 2, 2], 2, num_classes, dense_classifier, pretrained)
+    return _pt_resnet_width('resnet18', BasicBlockPT, [2, 2, 2, 2], 64, num_classes, dense_classifier, pretrained, max_width=16)
 
 def pt_resnet18_4(input_shape, num_classes, dense_classifier=False, pretrained=False):
     """ return a ResNet 18 object
     """
-    return _pt_resnet('resnet18', BasicBlockPT, [2, 2, 2, 2], 4, num_classes, dense_classifier, pretrained)
+    return _pt_resnet_width('resnet18', BasicBlockPT, [2, 2, 2, 2], 64, num_classes, dense_classifier, pretrained, max_width=32)
 
 def pt_resnet18_8(input_shape, num_classes, dense_classifier=False, pretrained=False):
     """ return a ResNet 18 object
     """
-    return _pt_resnet('resnet18', BasicBlockPT, [2, 2, 2, 2], 8, num_classes, dense_classifier, pretrained)
+    return _pt_resnet_width('resnet18', BasicBlockPT, [2, 2, 2, 2], 64, num_classes, dense_classifier, pretrained, max_width=64)
 
 def pt_resnet18_16(input_shape, num_classes, dense_classifier=False, pretrained=False):
     """ return a ResNet 18 object
     """
-    return _pt_resnet('resnet18', BasicBlockPT, [2, 2, 2, 2], 16, num_classes, dense_classifier, pretrained)
+    return _pt_resnet_width('resnet18', BasicBlockPT, [2, 2, 2, 2], 64, num_classes, dense_classifier, pretrained, max_width=128)
 
 
 def pt_resnet18_32(input_shape, num_classes, dense_classifier=False, pretrained=False):
     """ return a ResNet 18 object
     """
-    return _pt_resnet('resnet18', BasicBlockPT, [2, 2, 2, 2], 32, num_classes, dense_classifier, pretrained)
+    return _pt_resnet_width('resnet18', BasicBlockPT, [2, 2, 2, 2], 64, num_classes, dense_classifier, pretrained, max_width=256)
 
 def pt_resnet18(input_shape, num_classes, dense_classifier=False, pretrained=False):
     """ return a ResNet 18 object

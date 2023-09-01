@@ -111,7 +111,7 @@ def run(args):
         norm_df = bef_df.merge(aft_df, on=["name", "pname"], suffixes=('_bef', '_aft'))
         print(tabulate(norm_df, headers='keys', tablefmt='psql'))
         norm_df = norm_df[norm_df.pname != "roast_array"]
-        print("full model norm", np.linalg.norm(norm_df.norm_bef), np.linalg.norm(norm_df.norm_aft))
+        print("full model norm (before, after)", np.linalg.norm(norm_df.norm_bef), np.linalg.norm(norm_df.norm_aft))
         return
 
     total_params = get_parameters(model)
