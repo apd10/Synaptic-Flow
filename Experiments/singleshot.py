@@ -8,7 +8,7 @@ from Utils import generator
 from Utils import metrics
 from train import *
 from prune import *
-
+from Layers import layers
 
 def analyse(model):
     names = []
@@ -28,8 +28,21 @@ def analyse(model):
 
     return pd.DataFrame({"name" : names, "pname" : pnames, "norm": norms})
 
-  
-
+def sparse_to_full(model):
+    for name, module in model.named_modules():
+        if type(module) in [layers.Linear]:
+            module.weight.data[:,:] = module.weight * module.weight_mask
+            module.weight_mask.data[:,:] = torch.ones_like(module.weight_mask)
+            if module.bias is not None:
+                module.bias.data[:] = module.bias * module.bias_mask
+                module.bias_mask.data[:] = torch.ones_like(module.bias_mask)
+        if type(module) in [layers.Conv2d]:
+            module.weight.data[:,:,:,:] = module.weight * module.weight_mask
+            module.weight_mask.data[:,:,:,:] = torch.ones_like(module.weight_mask)
+            if module.bias is not None:
+                module.bias.data[:] = module.bias * module.bias_mask
+                module.bias_mask.data[:] = torch.ones_like(module.bias_mask)
+    return model
 def run(args):
     ## Random Seed and Device ##
     torch.manual_seed(args.seed)
@@ -58,6 +71,11 @@ def run(args):
         print(tabulate(norm_df, headers='keys', tablefmt='psql'))
         print("full model norm (before, after)", np.linalg.norm(norm_df.norm_bef), np.linalg.norm(norm_df.norm_aft))
         return
+
+    if args.sparse_full_fine_tune:
+        model.load_state_dict(torch.load(args.sparse_full_fine_tune))
+        model = sparse_to_full(model)
+
 
     loss = nn.CrossEntropyLoss()
     opt_class, opt_kwargs = load.optimizer(args.optimizer)

@@ -129,6 +129,9 @@ if __name__ == '__main__':
 
     parser.add_argument('--roast-full-fine-tune', action='store', default=None, type=str,
                         help='pass a model to fine tune in the full space')
+
+    parser.add_argument('--sparse-full-fine-tune', action='store', default=None, type=str,
+                        help='pass a model to fine tune in the full space')
     parser.add_argument('--json', action='store', default=None, type=str, help='load args from json')
     parser.add_argument('--override', action='store', default=None, type=str, help='load args from json')
 
