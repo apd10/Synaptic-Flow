@@ -114,6 +114,11 @@ def run(args):
         print("full model norm (before, after)", np.linalg.norm(norm_df.norm_bef), np.linalg.norm(norm_df.norm_aft))
         return
 
+    if args.roast_full_fine_tune:
+        model.load_state_dict(torch.load(args.roast_full_fine_tune))
+        converter = FakeRoastUtil_v2.RoastToFullModel(model)
+        model = converter.process()
+
     total_params = get_parameters(model)
     if args.use_global_roast:
         print((total_params == int(sparsity*roasted_parameters) + (possible_params - roasted_parameters)))
