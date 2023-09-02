@@ -97,6 +97,8 @@ if __name__ == '__main__':
                         help='experiment name (default: example)')
     parser.add_argument('--expid', type=str, default='',
                         help='name used to save results (default: "")')
+    parser.add_argument('--expid_append', type=str, default='',
+                        help='name used to save results (default: "")')
     parser.add_argument('--result-dir', type=str, default='Results/data',
                         help='path to directory to save results (default: "Results/data")')
     parser.add_argument('--gpu', type=int, default='0',
@@ -144,27 +146,37 @@ if __name__ == '__main__':
             t_args.__dict__.update(json.load(f))
             for att in new_args.override.split(','):
                 t_args.__dict__[att.replace('-','_')] = new_args.__dict__[att.replace('-','_')]
+            if new_args.expid_append is not None:
+                # hacky because of manipulation of result_dir 
+                import os 
+                x = os.path.dirname(os.path.realpath(new_args.json))
+                x = os.path.dirname(x)
+                x = os.path.dirname(x)
+                t_args.__dict__['result_dir'] = x
+            
             args = parser.parse_args(namespace=t_args)
     else:
         args = new_args
-
 
     ## Construct Result Directory ##
     if args.expid == "":
         print("WARNING: this experiment is not being saved.")
         setattr(args, 'save', False)
     else:
-        result_dir = '{}/{}/{}'.format(args.result_dir, args.experiment, args.expid)
+        result_dir = '{}/{}/{}'.format(args.result_dir, args.experiment, args.expid + args.expid_append)
         setattr(args, 'save', True)
         setattr(args, 'result_dir', result_dir)
+        print("saving result at", result_dir)
         try:
             os.makedirs(result_dir)
         except FileExistsError:
             val = ""
             while val not in ['yes', 'no']:
-                val = input("Experiment '{}' with expid '{}' exists.  Overwrite (yes/no)? ".format(args.experiment, args.expid))
+                val = input("Experiment '{}' with expid '{}' exists.  Overwrite (yes/no)? ".format(args.experiment, args.expid + args.expid_append))
             if val == 'no':
                 quit()
+
+
 
     ## Save Args ##
     if args.save:

@@ -43,6 +43,7 @@ def sparse_to_full(model):
                 module.bias.data[:] = module.bias * module.bias_mask
                 module.bias_mask.data[:] = torch.ones_like(module.bias_mask)
     return model
+
 def run(args):
     ## Random Seed and Device ##
     torch.manual_seed(args.seed)
