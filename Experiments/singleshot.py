@@ -28,16 +28,20 @@ def analyse(model):
 
     return pd.DataFrame({"name" : names, "pname" : pnames, "norm": norms})
 
-def sparse_to_full(model):
+def sparse_to_full(model, add_noise_to_zeros=-1):
     for name, module in model.named_modules():
         if type(module) in [layers.Linear]:
-            module.weight.data[:,:] = module.weight * module.weight_mask
+            module.weight.data[:,:] = module.weight * module.weight_mask 
+            if add_noise_to_zeros > 0.0:
+                module.weight.data[:,:] += torch.randn_like(module.weight) * (1 - module.weight_mask) * add_noise_to_zeros
             module.weight_mask.data[:,:] = torch.ones_like(module.weight_mask)
             if module.bias is not None:
                 module.bias.data[:] = module.bias * module.bias_mask
                 module.bias_mask.data[:] = torch.ones_like(module.bias_mask)
         if type(module) in [layers.Conv2d]:
-            module.weight.data[:,:,:,:] = module.weight * module.weight_mask
+            module.weight.data[:,:,:,:] = module.weight * module.weight_mask  
+            if add_noise_to_zeros > 0.0:
+                module.weight.data[:,:,:,:] += torch.randn_like(module.weight) * (1 - module.weight_mask) * add_noise_to_zeros
             module.weight_mask.data[:,:,:,:] = torch.ones_like(module.weight_mask)
             if module.bias is not None:
                 module.bias.data[:] = module.bias * module.bias_mask
@@ -75,7 +79,7 @@ def run(args):
 
     if args.sparse_full_fine_tune:
         model.load_state_dict(torch.load(args.sparse_full_fine_tune))
-        model = sparse_to_full(model)
+        model = sparse_to_full(model, args.add_noise_to_zeros)
 
 
     loss = nn.CrossEntropyLoss()

@@ -116,8 +116,16 @@ def run(args):
 
     if args.roast_full_fine_tune:
         model.load_state_dict(torch.load(args.roast_full_fine_tune))
+        bef_df = analyse(model)
+        print("Loaded model")
+        print(tabulate(bef_df, headers='keys', tablefmt='psql'))
         converter = FakeRoastUtil_v2.RoastToFullModel(model)
         model = converter.process()
+        aft_df = analyse(model)
+        print("Converted model")
+        print(tabulate(aft_df, headers='keys', tablefmt='psql'))
+        print("Model to be trained")
+        print(model)
 
     total_params = get_parameters(model)
     if args.use_global_roast:

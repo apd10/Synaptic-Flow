@@ -134,6 +134,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--sparse-full-fine-tune', action='store', default=None, type=str,
                         help='pass a model to fine tune in the full space')
+
+    parser.add_argument('--add-noise-to-zeros', action='store', default=0.0, type=float,
+                        help='add noise to masked part when doing full finetune for sparse models')
+
     parser.add_argument('--json', action='store', default=None, type=str, help='load args from json')
     parser.add_argument('--override', action='store', default=None, type=str, help='load args from json')
 

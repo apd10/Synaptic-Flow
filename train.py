@@ -5,6 +5,7 @@ from tqdm import tqdm
 from Utils.manipulators import *
 from FakeRoast.FakeRoastUtil_v2 import RoastGradScaler
 from FakeRoast.FakeRoast import FakeRoast
+from tabulate import tabulate
 
 def analyse_grads(model):
     print(" ================ analysing grad norms ===============")
@@ -19,6 +20,26 @@ def analyse_grads(model):
                 grad = param.grad
                 norm = torch.norm(grad).item()
             print(name, pname, grad.shape, norm)
+
+
+def check_sparsity(model):
+    names = []
+    pnames = []
+    sparsities = []
+    for name, module in model.named_modules():
+        for pname, param in module.named_parameters(recurse=False):
+            print(name, pname)
+            if 'weight_mask' in dir(module) and pname == "weight":
+                x = param * module.weight_mask
+            else:
+                x = param
+
+            sparsity = torch.sum(torch.abs(x) > 1e-5 ) / float(x.numel())
+            names.append(name)
+            pnames.append(pname)
+            sparsities.append(sparsity)
+
+    return pd.DataFrame({"name" : names, "pname" : pnames, "sparsity": sparsities})
 
 def train(model, loss, optimizer, dataloader, device, epoch, verbose, log_interval=10, use_roast_scaler=False):
     model.train()
@@ -86,13 +107,14 @@ def train_eval_loop(model, loss, optimizer, scheduler, train_loader, test_loader
     if do_validation:
         val_loss, val_accuracy1, val_accuracy5 = eval(model, loss, validation_loader, device, verbose, 'val')
     test_loss, accuracy1, accuracy5 = eval(model, loss, test_loader, device, verbose, 'test')
-
+    print("test  ep {:3d} it {:3d} loss {:.3f} acc {:.3f}%".format(0, 0, test_loss, accuracy1))
     columns = ['train_loss',  'val_loss', 'val1_accuracy', 'val5_accuracy', 'test_loss', 'top1_accuracy', 'top5_accuracy']
     rows = [[np.nan, val_loss, val_accuracy1, val_accuracy5, test_loss, accuracy1, accuracy5]]
     prev_lr = scheduler.get_last_lr()
     best_val_acc = 0
     model_state_dict = None
     for epoch in range(epochs):
+        #print(tabulate(check_sparsity(model), headers='keys', tablefmt='psql'))
         lr = scheduler.get_last_lr()
         if lr != prev_lr:
             if verbose:
