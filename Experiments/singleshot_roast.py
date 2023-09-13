@@ -78,7 +78,7 @@ def run(args):
     if args.roast_mapper == "random":
         mapper_args = None
     else:
-        mapper_args = { "mapper": args.roast_mapper, "hasher" : "uhash", "block_k" : 16, "block_n" : 16, "block": 8, "seed" : 1011}
+        mapper_args = { "mapper": args.roast_mapper, "hasher" : "uhash", "block_k" : 16, "block_n" : 16, "block": 8, "seed" : args.seed}
     if args.use_global_roast:
         print("GLOBAL ROAST")
         roaster = FakeRoastUtil_v2.ModelRoasterGradScaler(model, True, sparsity, verbose=FakeRoastUtil_v2.NONE, 
