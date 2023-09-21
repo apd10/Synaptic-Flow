@@ -117,7 +117,7 @@ class VGG_PT_WIDTH(nn.Module):
 
     def forward(self, x):
         x = self.layers(x)
-        x = nn.AvgPool2d(2)(x)
+        x = nn.AvgPool2d(x.shape[-1])(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
         return x
@@ -156,7 +156,7 @@ class VGG(nn.Module):
 
     def forward(self, x):
         x = self.layers(x)
-        x = nn.AvgPool2d(2)(x)
+        x = nn.AvgPool2d(x.shape[-1])(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
         return x
