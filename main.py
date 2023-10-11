@@ -3,6 +3,7 @@ import json
 import os
 from Experiments import singleshot
 from Experiments import singleshot_roast
+from Experiments import multishot_roast
 from Experiments import multishot
 from Experiments.theory import unit_conservation
 from Experiments.theory import layer_conservation
@@ -51,6 +52,20 @@ if __name__ == '__main__':
                         help='multiplicative factor of learning rate drop (default: 0.1)')
     training_args.add_argument('--weight-decay', type=float, default=0.0,
                         help='weight decay (default: 0.0)')
+
+    training_args.add_argument('--distill-model', action='store', default=None, type=str,
+                        help='start model')
+    training_args.add_argument('--distill-epochs', action='store', default=10, type=int,
+                        help='start model')
+    training_args.add_argument('--distill-batch-size', action='store', default=128, type=int, help='distillation batch size')
+    training_args.add_argument('--distill-lr', type=float, default=0.001,
+                        help='learning rate (default: 0.001)')
+    training_args.add_argument('--distill-step', type=int, default=1000,
+                        help='learning rate (default: 1000)')
+    training_args.add_argument('--distill-lr-drops', type=int, nargs='*', default=[],
+                        help='list of learning rate drops (default: [])')
+    training_args.add_argument('--distill-lr-drop-rate', type=float, default=0.1,
+                        help='multiplicative factor of learning rate drop (default: 0.1)')
     # Pruning Hyperparameters
     pruning_args = parser.add_argument_group('pruning')
     pruning_args.add_argument('--pruner', type=str, default='rand', 
@@ -92,7 +107,7 @@ if __name__ == '__main__':
                         help='list of number of prune-train cycles (levels) for multishot (default: [])')
     ## Experiment Hyperparameters ##
     parser.add_argument('--experiment', type=str, default='singleshot', 
-                        choices=['singleshot', 'roast', 'multishot','unit-conservation',
+                        choices=['singleshot', 'roast', 'roast-distillation', 'multishot','unit-conservation',
                         'layer-conservation','imp-conservation','schedule-conservation'],
                         help='experiment name (default: example)')
     parser.add_argument('--expid', type=str, default='',
@@ -192,6 +207,8 @@ if __name__ == '__main__':
         singleshot.run(args)
     if args.experiment == 'roast':
         singleshot_roast.run(args)
+    if args.experiment == 'roast-distillation':
+        multishot_roast.run(args)
     if args.experiment == 'multishot':
         multishot.run(args)
     if args.experiment == 'unit-conservation':

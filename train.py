@@ -41,12 +41,16 @@ def check_sparsity(model):
 
     return pd.DataFrame({"name" : names, "pname" : pnames, "sparsity": sparsities})
 
-def train(model, loss, optimizer, dataloader, device, epoch, verbose, log_interval=10, use_roast_scaler=False):
+def train(model, loss, optimizer, dataloader, device, epoch, verbose, log_interval=10, use_roast_scaler=False, distiller=None):
     model.train()
     total = 0
     for batch_idx, (data, target) in enumerate(dataloader):
         if verbose:
             print(batch_idx, "train loop")
+
+        if distiller:
+            distiller.update_boundary(epoch, batch_idx, dataloader.__len__())
+
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
         output = model(data)
@@ -95,7 +99,7 @@ def eval(model, loss, dataloader, device, verbose, tag=""):
             average_loss, correct1, len(dataloader.dataset), accuracy1))
     return average_loss, accuracy1, accuracy5
 
-def train_eval_loop(model, loss, optimizer, scheduler, train_loader, test_loader, device, epochs, verbose, do_validation=False, use_roast_scaler=False):
+def train_eval_loop(model, loss, optimizer, scheduler, train_loader, test_loader, device, epochs, verbose, do_validation=False, use_roast_scaler=False, distiller=None):
     # split train dataloader into validation
     validation_loader = None
     if do_validation:
@@ -110,18 +114,17 @@ def train_eval_loop(model, loss, optimizer, scheduler, train_loader, test_loader
     print("test  ep {:3d} it {:3d} loss {:.3f} acc {:.3f}%".format(0, 0, test_loss, accuracy1))
     columns = ['train_loss',  'val_loss', 'val1_accuracy', 'val5_accuracy', 'test_loss', 'top1_accuracy', 'top5_accuracy']
     rows = [[np.nan, val_loss, val_accuracy1, val_accuracy5, test_loss, accuracy1, accuracy5]]
-    prev_lr = scheduler.get_last_lr()
+    prev_lr = -1
     best_val_acc = 0
     model_state_dict = None
     for epoch in range(epochs):
         #print(tabulate(check_sparsity(model), headers='keys', tablefmt='psql'))
         lr = scheduler.get_last_lr()
         if lr != prev_lr:
-            if verbose:
-                print("epoch:", epoch, "LR change", prev_lr, "-->", lr, flush=True)
+            print("epoch:", epoch, "LR change", prev_lr, "-->", lr, flush=True)
             prev_lr = lr
             
-        train_loss = train(model, loss, optimizer, train_loader, device, epoch, verbose, use_roast_scaler=use_roast_scaler)
+        train_loss = train(model, loss, optimizer, train_loader, device, epoch, verbose, use_roast_scaler=use_roast_scaler, distiller=distiller)
         if do_validation:
             val_loss, val_accuracy1, val_accuracy5 = eval(model, loss, validation_loader, device, verbose, 'val')
         test_loss, accuracy1, accuracy5 = eval(model, loss, test_loader, device, verbose, 'test')
