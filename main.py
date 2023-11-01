@@ -125,6 +125,10 @@ if __name__ == '__main__':
     parser.add_argument('--roast-init-std', action='store', default=0.04, type=float,
                         help='roast array init std')
     parser.add_argument('--roast-mapper', action='store', default='hashednet', type=str, help='mapper')
+    parser.add_argument('--mapper-block-k', action='store', default=32, type=int, help='mapper block k (roast based mapper)')
+    parser.add_argument('--mapper-block-n', action='store', default=32, type=int, help='mapper block n (roast based mapper)')
+    parser.add_argument('--mapper-block', action='store', default=32, type=int, help='mapper embedding block (roast based mapper)')
+    parser.add_argument('--mapper-block-k-small', action='store', default=32, type=int, help='roast-comp unique rows count <= block-k')
 
     parser.add_argument('--analyse-model', action='store', default=None, type=str,
                         help='post model analysis')
